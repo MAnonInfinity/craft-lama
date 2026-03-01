@@ -21,6 +21,22 @@ try:
          vgg.model_urls['vgg16_bn'] = 'https://download.pytorch.org/models/vgg16_bn-6c64b313.pth'
 except ImportError:
     pass
+
+# --- FIX: craft-text-detector compatibility with newer NumPy (ragged arrays) ---
+# The library tries to do np.array(polys) which fails when polygons have different
+# point counts. We patch it to process them individually.
+try:
+    import craft_text_detector.craft_utils as craft_utils
+    def patched_adjustResultCoordinates(polys, ratio_w, ratio_h, ratio_net=2):
+        if len(polys) > 0:
+            for k in range(len(polys)):
+                if polys[k] is not None:
+                    polys[k] = np.array(polys[k]) * (ratio_w * ratio_net, ratio_h * ratio_net)
+        return polys
+    craft_utils.adjustResultCoordinates = patched_adjustResultCoordinates
+except ImportError:
+    pass
+# ---------------------------------------------------------------------
 # ---------------------------------------------------------------------
 
 from pathlib import Path
