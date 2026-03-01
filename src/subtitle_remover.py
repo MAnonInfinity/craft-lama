@@ -14,6 +14,7 @@ from processor import detect_and_remove_subtitles
 # --- CONFIGURATION ---
 VIDEO_PATH = "videos/2.mp4"
 OUTPUT_VIDEO = "output.mp4"
+MASK_EXPANSION = 5  # Expansion in pixels to cover text shadows/glow
 # ---------------------
 
 def main():
@@ -39,7 +40,7 @@ def main():
         extract_audio(VIDEO_PATH, audio_path)
 
         # Step 3: Pipelined Processing
-        detect_and_remove_subtitles(frames_dir, clean_frames_dir)
+        detect_and_remove_subtitles(frames_dir, clean_frames_dir, mask_expansion=MASK_EXPANSION)
 
         # Step 4: Final Encode
         print("[4] High-quality re-encoding...")

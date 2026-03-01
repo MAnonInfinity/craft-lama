@@ -26,7 +26,7 @@ def detector_worker(frame_paths, craft_model, queue):
         })
     queue.put(None)  # Sentinel to stop
 
-def detect_and_remove_subtitles(frames_dir, output_dir):
+def detect_and_remove_subtitles(frames_dir, output_dir, mask_expansion=5):
     os.makedirs(output_dir, exist_ok=True)
     
     # 1. Smart Device Detection
@@ -67,7 +67,7 @@ def detect_and_remove_subtitles(frames_dir, output_dir):
                     pbar.update(1)
                     continue
 
-                # Prepare Mask & Inpaint
+                # Prepare Mask
                 image = Image.open(frame_path).convert("RGB")
                 mask = np.zeros((image.height, image.width), dtype=np.uint8)
                 
@@ -75,6 +75,12 @@ def detect_and_remove_subtitles(frames_dir, output_dir):
                     points = np.array(box, dtype=np.int32)
                     cv2.fillPoly(mask, [points], 255)
 
+                # DILATION: Expand the mask to cover shadows/glow
+                if mask_expansion > 0:
+                    kernel = np.ones((mask_expansion, mask_expansion), np.uint8)
+                    mask = cv2.dilate(mask, kernel, iterations=1)
+
+                # 5. Removal (LaMa)
                 mask_pil = Image.fromarray(mask)
                 inpainted = lama(image, mask_pil)
                 
