@@ -75,6 +75,11 @@ def apply_patches():
             }
         
         predict.get_prediction = exhaustive_patched_get_prediction
+        
+        # Also patch it in the root module since Craft class uses the root's reference
+        import craft_text_detector
+        craft_text_detector.get_prediction = exhaustive_patched_get_prediction
+        
         print("[*] Applied compatibility patches for CRAFT and Torchvision.")
     except ImportError:
         pass
