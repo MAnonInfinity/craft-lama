@@ -68,21 +68,40 @@ def detect_and_remove_subtitles(frames_dir, output_dir, mask_expansion=5):
                     continue
 
                 # Prepare Mask
-                image = Image.open(frame_path).convert("RGB")
-                mask = np.zeros((image.height, image.width), dtype=np.uint8)
+                image_np = np.array(Image.open(frame_path).convert("RGB"))
+                h, w = image_np.shape[:2]
+                mask = np.zeros((h, w), dtype=np.uint8)
                 
                 for box in task["boxes"]:
                     points = np.array(box, dtype=np.int32)
                     cv2.fillPoly(mask, [points], 255)
 
-                # DILATION: Expand the mask to cover shadows/glow
+                # --- HYBRID REFINEMENT ---
+                # 1. Color Thresholding: Catch bright white pixels CRAFT missed
+                gray = cv2.cvtColor(image_np, cv2.COLOR_RGB2GRAY)
+                _, white_mask = cv2.threshold(gray, 200, 255, cv2.THRESH_BINARY)
+                
+                # Intersect: Only keep white pixels that are near the CRAFT boxes
+                # (We dilate the CRAFT boxes a bit first to create a 'search zone')
+                kernel_zone = np.ones((10, 10), np.uint8)
+                search_zone = cv2.dilate(mask, kernel_zone, iterations=1)
+                refined_white = cv2.bitwise_and(white_mask, search_zone)
+                
+                # Combine original CRAFT mask with the refined white pixels
+                mask = cv2.bitwise_or(mask, refined_white)
+
+                # 2. Dilation: Expand to cover the glow/shadow
                 if mask_expansion > 0:
                     kernel = np.ones((mask_expansion, mask_expansion), np.uint8)
                     mask = cv2.dilate(mask, kernel, iterations=1)
+                
+                # 3. Feathering: Blur the mask edges for seamless blending
+                mask = cv2.GaussianBlur(mask, (5, 5), 0)
 
                 # 5. Removal (LaMa)
+                image_pil = Image.fromarray(image_np)
                 mask_pil = Image.fromarray(mask)
-                inpainted = lama(image, mask_pil)
+                inpainted = lama(image_pil, mask_pil)
                 
                 # Dispatch save to I/O thread
                 io_executor.submit(save_image, inpainted, save_path)
