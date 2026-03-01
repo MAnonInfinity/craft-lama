@@ -73,7 +73,7 @@ def detect_and_remove_subtitles(frames_dir, output_dir):
     print("[!] No GPU found. Falling back to CPU (Processing will be SLOW).")
   
   # 2. Initialize Models
-  craft = Craft(output_dir=None, crop_type="poly", cuda=(device == "cuda"), languages=["en"])
+  craft = Craft(output_dir=None, crop_type="poly", cuda=(device == "cuda"))
   lama = SimpleLama(device=device)
 
   frame_paths = sorted(Path(frames_dir).iterdir())
