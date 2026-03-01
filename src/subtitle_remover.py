@@ -6,6 +6,19 @@ import shutil
 import torch
 import numpy as np
 import time
+import sys
+
+# --- FIX: craft-text-detector compatibility with newer torchvision ---
+# craft-text-detector tries to import 'model_urls' from 'torchvision.models.vgg',
+# which was removed in recent versions. We monkey patch it here before importing Craft.
+try:
+    import torchvision.models.vgg as vgg
+    if not hasattr(vgg, 'model_urls'):
+        vgg.model_urls = {}
+except ImportError:
+    pass
+# ---------------------------------------------------------------------
+
 from pathlib import Path
 from PIL import Image
 from craft_text_detector import Craft
