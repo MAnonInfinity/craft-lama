@@ -19,5 +19,4 @@ wheels/
 # Project specific
 output.mp4
 /frames/
-/videos/
 *.aac
