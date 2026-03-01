@@ -14,7 +14,11 @@ import sys
 try:
     import torchvision.models.vgg as vgg
     if not hasattr(vgg, 'model_urls'):
-        vgg.model_urls = {}
+        vgg.model_urls = {
+            'vgg16_bn': 'https://download.pytorch.org/models/vgg16_bn-6c64b313.pth'
+        }
+    elif 'vgg16_bn' not in vgg.model_urls:
+         vgg.model_urls['vgg16_bn'] = 'https://download.pytorch.org/models/vgg16_bn-6c64b313.pth'
 except ImportError:
     pass
 # ---------------------------------------------------------------------
